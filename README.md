@@ -17,6 +17,18 @@ pip install -e kitchen_alt/kitchen/envs
 wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_howto100m.pth
 wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_dict.npy
 mv S3D_HowTo100M/s3dg.py ./
+pip install gymnax
+git clone https://github.com/carlosferrazza/humanoid-bench.git
+cd humanoid-bench/ 
+pip install -e .
+pip install "jax[cuda12]"
+cd ..
+pip uninstall torch torchvision torchaudio
+pip uninstall jax jaxlib
+# pip install torch torchvision torchaudio
+conda install pytorch==2.3.1 torchvision==0.18.1 pytorch-cuda=12.1 -c pytorch -c nvidia
+#pip install "jax[cuda12]"
+#pip install --upgrade flax jax jaxlib
 ```
 
 If you're running into download issues with the S3D weights (last 2 commands), the two files can also be obtained from our google drive:

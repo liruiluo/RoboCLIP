@@ -341,8 +341,8 @@ def make_env(env_type, env_id, rank, seed=0):
     def _init():
         # env = KitchenMicrowaveHingeSlideV0()
         if env_type == "sparse_learnt":
-            # env = KitchenEnvSparseReward(args.text_string, time=True)
-            env = KitchenEnvSparseReward(time=True, video_path="/lab/ssontakk/S3D_HowTo100M/cem_planning/gifs/Kettle_dense_original.gif")
+            env = KitchenEnvSparseReward(args.text_string, time=True)
+            # env = KitchenEnvSparseReward(time=True, video_path="/lab/ssontakk/S3D_HowTo100M/cem_planning/gifs/Kettle_dense_original.gif")
         elif env_type == "dense_learnt":
             env = KitchenEnvSlidingReward(args.text_string)
         elif env_type == "sparse_original":

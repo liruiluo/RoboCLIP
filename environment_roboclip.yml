@@ -88,7 +88,7 @@ dependencies:
       - joblib==1.1.0
       - jsonpickle==3.0.1
       - kaitaistruct==0.10
-      - keras-nightly==2.5.0.dev2021032900
+      #- keras-nightly==2.5.0.dev2021032900
       - keras-preprocessing==1.1.2
       - kiwisolver==1.4.4
       - labmaze==1.0.6

@@ -40,15 +40,17 @@ from metaworld.envs import (ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE,
 from kitchen_env_wrappers import readGif
 from matplotlib import animation
 import matplotlib.pyplot as plt
+from prompts import TASKS, TASKS_TARGET
+from humanoid_bench import TASKS
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
     parser.add_argument('--algo', type=str, default='ppo')
     parser.add_argument('--text-string', type=str, default='robot opening sliding door')
     parser.add_argument('--dir-add', type=str, default='')
-    parser.add_argument('--env-id', type=str, default='AssaultBullet-v0')
-    parser.add_argument('--env-type', type=str, default='AssaultBullet-v0')
-    parser.add_argument('--total-time-steps', type=int, default=5000000)
+    parser.add_argument('--env-id', type=str, default='h1hand-run-customized-v0')
+    parser.add_argument('--env-type', type=str, default='h1hand-run-customized-v0')
+    parser.add_argument('--total-time-steps', type=int, default=10000000)
     parser.add_argument('--n-envs', type=int, default=8)
     parser.add_argument('--n-steps', type=int, default=128)
     parser.add_argument('--pretrained', type=str, default=None)
@@ -59,8 +61,9 @@ def get_args():
 class MetaworldSparse(Env):
     def __init__(self, env_id, text_string=None, time=False, video_path=None, rank=0, human=True):
         super(MetaworldSparse,self)
-        door_open_goal_hidden_cls = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[env_id]
-        env = door_open_goal_hidden_cls(seed=rank)
+        # door_open_goal_hidden_cls = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[env_id]
+        # env = door_open_goal_hidden_cls(seed=rank)
+        env= gym.make(env_id, seed=rank)
         self.env = TimeLimit(env, max_episode_steps=128)
         self.time = time
         if not self.time:
@@ -165,8 +168,9 @@ class MetaworldSparse(Env):
 class MetaworldDense(Env):
     def __init__(self, env_id, time=False, rank=0):
         super(MetaworldDense,self)
-        door_open_goal_hidden_cls = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[env_id]
-        env = door_open_goal_hidden_cls(seed=rank)
+        # door_open_goal_hidden_cls = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[env_id]
+        # env = door_open_goal_hidden_cls(seed=rank)
+        env = gym.make(env_id)
         self.env = TimeLimit(env, max_episode_steps=128)
         self.time = time
         if not self.time:
@@ -218,7 +222,7 @@ def make_env(env_type, env_id, rank, seed=0):
     def _init():
         # env = KitchenMicrowaveHingeSlideV0()
         if env_type == "sparse_learnt":
-            env = MetaworldSparse(env_id=env_id, text_string="robot closing green drawer", time=True, rank=rank)
+            env = MetaworldSparse(env_id=env_id, text_string=TASKS[env_id], time=True, rank=rank)
             # env = MetaworldSparse(env_id=env_id, video_path="./gifs/human_opening_door.gif", time=True, rank=rank, human=True)
         
         elif env_type == "sparse_original":
@@ -238,7 +242,7 @@ def main():
     global log_dir
     args = get_args()
     env_id = "button-press-v2-goal-hidden"
-    log_dir = f"metaworld/{args.env_id}_{args.env_type}{args.dir_add}"
+    log_dir = f"humanoid/{args.env_id}_{args.env_type}{args.dir_add}"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     envs = SubprocVecEnv([make_env(args.env_type, args.env_id, i) for i in range(args.n_envs)])
