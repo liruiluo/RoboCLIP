@@ -164,6 +164,7 @@ cython_debug/
 Metaworld
 S3D_HowTo100M
 kitchen_alt
+humanoid-bench
 mjrl
 slurm
 test
