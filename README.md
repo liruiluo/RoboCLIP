@@ -7,6 +7,7 @@ We recommend using conda for installation and provide a `.yml` file for installa
 
 ```sh
 git clone https://github.com/liruiluo/RoboCLIP.git --recursive
+or git@github.com:liruiluo/RoboCLIP.git --recursive
 cd RoboCLIP
 conda env create -f environment_roboclip.yml
 conda activate roboclip
