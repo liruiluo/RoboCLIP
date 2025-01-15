@@ -28,7 +28,7 @@ pip uninstall jax jaxlib
 # pip install torch torchvision torchaudio
 conda install pytorch==2.3.1 torchvision==0.18.1 pytorch-cuda=12.1 -c pytorch -c nvidia
 #pip install "jax[cuda12]"
-#pip install --upgrade flax jax jaxlib
+pip install --upgrade flax jax jaxlib
 ```
 
 If you're running into download issues with the S3D weights (last 2 commands), the two files can also be obtained from our google drive:
@@ -43,6 +43,7 @@ We provide the gifs used in our experiments within the `gifs/`.
 Then run: 
 ```sh
 python metaworld_envs.py --env-type sparse_learnt --env-id drawer-open-v2-goal-hidden --dir-add <add experiment identifier>
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-run-customized-v0
 ```
 
 To run the Kitchen experiments, similarly specify the gif path on line 345 and then run the following line with `--env-id` as `Kettle`, `Hinge` or `Slide`. 
