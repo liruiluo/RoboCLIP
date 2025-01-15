@@ -1,10 +1,11 @@
-from gym import Env, spaces
+from gymnasium import Env, spaces
 import numpy as np
 from stable_baselines3 import PPO
 import torch as th
 from s3dg import S3D
-from gym.wrappers.time_limit import TimeLimit
-from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+from gymnasium.wrappers.time_limit import TimeLimit
+# from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+from subproc_vec_env import SubprocVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 from PIL import Image, ImageSequence
 import torch as th
@@ -20,8 +21,8 @@ import matplotlib.pylab as plt
 
 from typing import Any, Dict
 
-import gym
-from gym.spaces import Box
+import gymnasium as gym
+from gymnasium.spaces import Box
 import torch as th
 
 from stable_baselines3.common.callbacks import BaseCallback
@@ -31,7 +32,8 @@ import os
 from stable_baselines3.common.monitor import Monitor
 from memory_profiler import profile
 import argparse
-from stable_baselines3.common.callbacks import EvalCallback
+# from stable_baselines3.common.callbacks import EvalCallback
+from callbacks import EvalCallback
 
 # from kitchen_env_wrappers import readGif
 from matplotlib import animation
@@ -39,6 +41,8 @@ import matplotlib.pyplot as plt
 from prompts import TASKS, TASKS_TARGET
 # from humanoid_bench import TASKS
 import henv
+import wandb
+from callbacks import ProgressBarCallback
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
@@ -51,6 +55,7 @@ def get_args():
     parser.add_argument('--n-envs', type=int, default=8)
     parser.add_argument('--n-steps', type=int, default=128)
     parser.add_argument('--pretrained', type=str, default=None)
+    parser.add_argument('--seed', type=int, default=0)
 
 
     args = parser.parse_args()
@@ -60,7 +65,8 @@ class MetaworldSparse(Env):
         super(MetaworldSparse,self)
         # door_open_goal_hidden_cls = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[env_id]
         # env = door_open_goal_hidden_cls(seed=rank)
-        env= gym.make(env_id, seed=rank)
+        env= gym.make(env_id)
+        env.action_space.seed(rank)
         self.env = TimeLimit(env, max_episode_steps=128)
         self.time = time
         if not self.time:
@@ -105,21 +111,29 @@ class MetaworldSparse(Env):
         frames = frames.transpose(0, 4, 1, 2, 3)
         return frames
 
-    def preprocess_metaworld(self, frames, shorten=True):
-        center = 240, 320
-        h, w = (250, 250)
-        x = int(center[1] - w/2)
-        y = int(center[0] - h/2)
-        # frames = np.array([cv2.resize(frame, dsize=(250, 250), interpolation=cv2.INTER_CUBIC) for frame in frames])
-        frames = np.array([frame[y:y+h, x:x+w] for frame in frames])
-        a = frames
+    # def preprocess_metaworld(self, frames, shorten=True):
+    #     center = 240, 320
+    #     h, w = (250, 250)
+    #     x = int(center[1] - w/2)
+    #     y = int(center[0] - h/2)
+    #     frames = np.array([cv2.resize(frame, dsize=(250, 250), interpolation=cv2.INTER_CUBIC) for frame in frames])
+    #     frames = np.array([frame[y:y+h, x:x+w] for frame in frames])
+    #     a = frames
+    #     frames = frames[None, :,:,:,:]
+    #     frames = frames.transpose(0, 4, 1, 2, 3)
+    #     if shorten:
+    #         frames = frames[:, :,::4,:,:]
+    #     # frames = frames/255
+    #     print(frames.shape)
+    #     exit()
+    #     return frames
+    def preprocess_metaworld(self, frames):
+        # frames = np.array(frames) # (35, 256, 256, 3)
+        frames = np.array([cv2.resize(frame, dsize=(224, 224), interpolation=cv2.INTER_CUBIC) for frame in frames])
         frames = frames[None, :,:,:,:]
         frames = frames.transpose(0, 4, 1, 2, 3)
-        if shorten:
-            frames = frames[:, :,::4,:,:]
-        # frames = frames/255
+        frames = frames[:, :,::4,:,:] # (1, 3, 9, 256, 256)
         return frames
-        
     
     def render(self):
         frame = self.env.render()
@@ -132,7 +146,8 @@ class MetaworldSparse(Env):
 
 
     def step(self, action):
-        obs, _, done, info = self.env.step(action)
+        obs, task_reward, terminated, truncated, info = self.env.step(action)
+        done = terminated or truncated
         self.past_observations.append(self.env.render())
         self.counter += 1
         t = self.counter/128
@@ -143,7 +158,7 @@ class MetaworldSparse(Env):
             
         
         
-            video = th.from_numpy(frames)
+            video = th.from_numpy(frames) # (1, 3, 9, 256, 256)
 
             video_output = self.net(video.float())
 
@@ -151,15 +166,15 @@ class MetaworldSparse(Env):
             similarity_matrix = th.matmul(self.target_embedding, video_embedding.t())
 
             reward = similarity_matrix.detach().numpy()[0][0]
-            return obs, reward, done, info
-        return obs, 0.0, done, info
+            return obs, reward*0.001+task_reward, terminated, truncated, info
+        return obs, task_reward, terminated, truncated, info
 
     def reset(self):
         self.past_observations = []
         self.counter = 0
         if not self.time:
             return self.env.reset()
-        return np.concatenate([self.env.reset(), np.array([0.0])])
+        return np.concatenate([self.env.reset()[0], np.array([0.0])]),self.env.reset()[1]
 
 
 class MetaworldDense(Env):
@@ -190,19 +205,20 @@ class MetaworldDense(Env):
 
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
+        obs, reward, terminated, truncated, info = self.env.step(action)
         # self.past_observations.append(self.env.render())
         self.counter += 1
         t = self.counter/128
         if self.time:
             obs = np.concatenate([obs, np.array([t])])
-        return obs, reward, done, info
+        return obs, reward, terminated, truncated, info
         
     def reset(self):
         self.counter = 0
         if not self.time:
             return self.env.reset()
-        return np.concatenate([self.env.reset(), np.array([0.0])])
+        # return np.concatenate([self.env.reset(), np.array([0.0])])
+        return np.concatenate([self.env.reset()[0], np.array([0.0])]),self.env.reset()[1]
 
 
 
@@ -225,38 +241,88 @@ def make_env(env_type, env_id, rank, seed=0):
         elif env_type == "sparse_original":
             env = KitchenEnvSparseOriginalReward(time=True)
         else:
-            env = MetaworldDense(env_id=env_id, time=True, rank=rank)
+            env = MetaworldDense(env_id=env_id, time=True, rank=seed + rank)
         env = Monitor(env, os.path.join(log_dir, str(rank)))
-        # env.seed(seed + rank)
+        # env.env.seed(seed + rank)
         return env
     # set_global_seeds(seed)
     return _init
 
+class CustomWandbCallback(BaseCallback):
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+        self.episode_rewards = []
+        self.episode_lengths = []
+        self.current_episode_reward = 0
+        self.current_episode_length = 0
 
+    def _on_step(self) -> bool:
+        # Get the current info from the environment
+        for info in self.locals['infos']:
+            if 'episode' in info.keys():
+                episode_info = info['episode']
+                wandb.log({
+                    'train/episode_reward': episode_info['r'],
+                    'train/episode_length': episode_info['l']
+                }, step=self.num_timesteps)
+                
+                self.episode_rewards.append(episode_info['r'])
+                self.episode_lengths.append(episode_info['l'])
 
+        # Log training metrics
+        if self.n_calls % 1000 == 0:  # Log every 1000 steps
+            wandb.log({
+                'train/mean_reward': np.mean(self.episode_rewards[-100:]) if self.episode_rewards else 0,
+                'train/mean_length': np.mean(self.episode_lengths[-100:]) if self.episode_lengths else 0,
+                'train/timesteps': self.num_timesteps,
+                'train/policy_loss': self.locals['self'].logger.name_to_value['train/policy_loss'],
+                'train/value_loss': self.locals['self'].logger.name_to_value['train/value_loss'],
+                'train/entropy_loss': self.locals['self'].logger.name_to_value.get('train/entropy_loss', 0)
+            }, step=self.num_timesteps)
+        
+        return True
+from wandb.integration.sb3 import WandbCallback
 def main():
     global args
     global log_dir
     args = get_args()
-    env_id = "button-press-v2-goal-hidden"
-    print(env_id)
-    log_dir = f"humanoid/{args.env_id}_{args.env_type}{args.dir_add}"
+    log_dir = f"output/humanoid/{args.env_id}_{args.env_type}{args.seed}"
+    run = wandb.init(
+        project="s3dg",
+        name=f"{args.env_id}_{args.seed}",
+        config={
+            "algo": args.algo,
+            "text_string": args.text_string,
+            "env_id": args.env_id,
+            "env_type": args.env_type,
+            "total_time_steps": args.total_time_steps,
+            "n_envs": args.n_envs,
+            "n_steps": args.n_steps,
+            "pretrained": args.pretrained,
+            "seed": args.seed
+        },
+        sync_tensorboard=True,
+        dir=log_dir,
+    )
+
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    envs = SubprocVecEnv([make_env(args.env_type, args.env_id, i) for i in range(args.n_envs)])
+    envs = SubprocVecEnv([make_env(args.env_type, args.env_id, args.seed + i) for i in range(args.n_envs)])
 
     if not args.pretrained:
         model = PPO("MlpPolicy", envs, verbose=1, tensorboard_log=log_dir, n_steps=args.n_steps, batch_size=args.n_steps*args.n_envs, n_epochs=1, ent_coef=0.5)
     else:
         model = PPO.load(args.pretrained, env=envs, tensorboard_log=log_dir)
 
-    eval_env = SubprocVecEnv([make_env("dense_original", args.env_id, i) for i in range(10, 10+args.n_envs)])#KitchenEnvDenseOriginalReward(time=True)
+    eval_env = SubprocVecEnv([make_env("dense_original", args.env_id, args.seed + i) for i in range(10, 10+args.n_envs)])#KitchenEnvDenseOriginalReward(time=True)
     # Use deterministic actions for evaluation
     eval_callback = EvalCallback(eval_env, best_model_save_path=log_dir,
-                                 log_path=log_dir, eval_freq=500,
+                                 log_path=log_dir, eval_freq=5000,
                                  deterministic=True, render=False)
+    wandb_callback_1 = WandbCallback(verbose=2)
+    progress_callback = ProgressBarCallback(total_timesteps=args.total_time_steps)
 
-    model.learn(total_timesteps=int(args.total_time_steps), callback=eval_callback)
+    model.learn(total_timesteps=int(args.total_time_steps), callback=[eval_callback,wandb_callback_1, progress_callback])
     model.save(f"{log_dir}/trained")
 
 

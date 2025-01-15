@@ -296,13 +296,21 @@ class S3D(nn.Module):
             token_to_word_path=dict_path)
 
     def _space_to_depth(self, input):
-        """3D space to depth trick for TPU optimization.
-      """
+        """3D space to depth trick for TPU optimization."""
         B, C, T, H, W = input.shape
-        input = input.view(B, C, T // 2, 2, H // 2, 2, W // 2, 2)
+
+        # Crop dimensions to be divisible by 2
+        T_new = T - T % 2
+        H_new = H - H % 2
+        W_new = W - W % 2
+
+        input = input[:, :, :T_new, :H_new, :W_new]  # Crop to even dimensions
+
+        input = input.view(B, C, T_new // 2, 2, H_new // 2, 2, W_new // 2, 2)
         input = input.permute(0, 3, 5, 7, 1, 2, 4, 6)
-        input = input.contiguous().view(B, 8 * C, T // 2, H // 2, W // 2)
+        input = input.contiguous().view(B, 8 * C, T_new // 2, H_new // 2, W_new // 2)
         return input
+
 
     def forward(self, inputs):
         """Defines the S3DG base architecture.

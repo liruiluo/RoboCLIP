@@ -1,5 +1,6 @@
 import gymnasium
 from .customized_humanoid import CustomizedHumanoidEnv
+import gym
 
 gymnasium.register(
     id="CustomizedHumanoid-v4",
@@ -20,6 +21,23 @@ for robot in ROBOTS:
         kwargs["control"] = control
         kwargs["task"] = task
         gymnasium.register(
+            id=f"{robot}-{task}-customized-v0",
+            entry_point=customized_humanoid_bench.HumanoidEnv,
+            max_episode_steps=task_info.max_episode_steps,
+            kwargs=kwargs,
+        )
+for robot in ROBOTS:
+    if robot == "g1" or robot == "digit":
+        control = "torque"
+    else:
+        control = "pos"
+    for task, task_info in TASKS.items():
+        task_info = task_info()
+        kwargs = task_info.kwargs.copy()
+        kwargs["robot"] = robot
+        kwargs["control"] = control
+        kwargs["task"] = task
+        gym.register(
             id=f"{robot}-{task}-customized-v0",
             entry_point=customized_humanoid_bench.HumanoidEnv,
             max_episode_steps=task_info.max_episode_steps,

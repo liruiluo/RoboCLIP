@@ -170,5 +170,8 @@ slurm
 test
 metaworld
 s3d_dict.npy
+s3d_dict.npy.1
 s3d_howto100m.pth
 gitcone
+output
+s3dg.py
