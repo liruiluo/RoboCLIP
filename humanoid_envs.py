@@ -33,15 +33,12 @@ from memory_profiler import profile
 import argparse
 from stable_baselines3.common.callbacks import EvalCallback
 
-import metaworld
-from metaworld.envs import (ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE,
-                            ALL_V2_ENVIRONMENTS_GOAL_HIDDEN)
-
-from kitchen_env_wrappers import readGif
+# from kitchen_env_wrappers import readGif
 from matplotlib import animation
 import matplotlib.pyplot as plt
 from prompts import TASKS, TASKS_TARGET
-from humanoid_bench import TASKS
+# from humanoid_bench import TASKS
+import env
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
@@ -242,6 +239,7 @@ def main():
     global log_dir
     args = get_args()
     env_id = "button-press-v2-goal-hidden"
+    print(env_id)
     log_dir = f"humanoid/{args.env_id}_{args.env_type}{args.dir_add}"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
