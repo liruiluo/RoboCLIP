@@ -38,7 +38,7 @@ from matplotlib import animation
 import matplotlib.pyplot as plt
 from prompts import TASKS, TASKS_TARGET
 # from humanoid_bench import TASKS
-import env
+import henv
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
