@@ -17,7 +17,7 @@ pip install -e kitchen_alt
 pip install -e kitchen_alt/kitchen/envs
 wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_howto100m.pth
 wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_dict.npy
-mv S3D_HowTo100M/s3dg.py ./
+#mv S3D_HowTo100M/s3dg.py ./
 pip install gymnax
 git clone https://github.com/carlosferrazza/humanoid-bench.git
 cd humanoid-bench/ 
@@ -44,21 +44,44 @@ To run experiments on the Metaworld environment suite with the sparse learnt rew
 We provide the gifs used in our experiments within the `gifs/`.
 Then run: 
 ```sh
-python metaworld_envs.py --env-type sparse_learnt --env-id drawer-open-v2-goal-hidden --dir-add <add experiment identifier>
-python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-run-customized-v0
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-run-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-run-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-run-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-walk-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-walk-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-walk-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-sit_hard-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-sit_hard-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-sit_hard-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-stair-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-stair-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-stair-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-stand-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-stand-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-stand-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-balance_simple-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-balance_simple-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-balance_simple-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-sit_simple-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-sit_simple-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-sit_simple-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-slide-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-slide-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-slide-customized-v0 --seed 2; /usr/bin/shutdown
+
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-balance_hard-customized-v0 --seed 0; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-balance_hard-customized-v0 --seed 1; /usr/bin/shutdown
+python humanoid_envs.py --env-type sparse_learnt --env-id h1hand-balance_hard-customized-v0 --seed 2; /usr/bin/shutdown
+
 ```
 
-To run the Kitchen experiments, similarly specify the gif path on line 345 and then run the following line with `--env-id` as `Kettle`, `Hinge` or `Slide`. 
-
-```sh
-python kitchen_env_wrappers.py --env-type sparse_learnt --env-id Kettle --dir-add <add experiment identifier>
-```
-
-These runs should produce default tensorboard experiments which save the best eval policy obtained by training on the RoboCLIP reward to disk. The plots in the paper are visualized by finetuning these policies for a handful of episodes. To replicate the Metaworld finetuning,  run:
-
-```sh
-python metaworld_envs.py --env-type dense_original --env-id drawer-open-v2-goal-hidden --pretrained <path_to_best_policy> --dir-add <add_experiment_identifier>  
-```
 ## FAQ for Debugging
 Please use the older version of Metaworld, i.e., pre Farama Foundation. Also rendering can be an issue sometimes, so setting the right renderer is necessary. We found `egl` to be useful. 
 ```sh
