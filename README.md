@@ -30,6 +30,7 @@ pip uninstall jax jaxlib
 conda install pytorch==2.3.1 torchvision==0.18.1 pytorch-cuda=12.1 -c pytorch -c nvidia
 #pip install "jax[cuda12]"
 pip install --upgrade flax jax jaxlib
+pip install stable-baselines3 --upgrade
 ```
 
 If you're running into download issues with the S3D weights (last 2 commands), the two files can also be obtained from our google drive:
