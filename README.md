@@ -9,6 +9,13 @@ We recommend using conda for installation and provide a `.yml` file for installa
 git clone https://github.com/liruiluo/RoboCLIP.git --recursive
 #or git@github.com:liruiluo/RoboCLIP.git --recursive
 cd RoboCLIP
+wget https://github.com/google-deepmind/mujoco/releases/download/2.1.0/mujoco210-linux-x86_64.tar.gz
+mkdir ~/.mujoco
+tar -zxvf mujoco210-linux-x86_64.tar.gz -C ~/.mujoco
+echo 'export LD_LIBRARY_PATH=~/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia:/usr/lib/x86_64-linux-gnu:/usr/local/nvidia/lib64' >> ~/.bashrc
+source ~/.bashrc
+sudo apt-get install -y libglew-dev
 conda env create -f environment_roboclip.yml
 conda activate roboclip
 pip install -e mjrl
@@ -17,6 +24,7 @@ pip install -e kitchen_alt
 pip install -e kitchen_alt/kitchen/envs
 wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_howto100m.pth
 wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_dict.npy
+
 #mv S3D_HowTo100M/s3dg.py ./
 pip install gymnax
 git clone https://github.com/carlosferrazza/humanoid-bench.git
@@ -25,12 +33,12 @@ cd humanoid-bench/
 pip install -e .
 pip install "jax[cuda12]"
 cd ..
-pip uninstall torch torchvision torchaudio
-pip uninstall jax jaxlib
+# pip uninstall torch torchvision torchaudio
+# pip uninstall jax jaxlib
 # pip install torch torchvision torchaudio
 conda install pytorch==2.3.1 torchvision==0.18.1 pytorch-cuda=12.1 -c pytorch -c nvidia
 #pip install "jax[cuda12]"
-pip install --upgrade flax jax jaxlib
+# pip install --upgrade flax jax jaxlib
 pip install stable-baselines3 --upgrade
 ```
 
