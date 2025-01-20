@@ -20,6 +20,7 @@ wget https://www.rocq.inria.fr/cluster-willow/amiech/howto100m/s3d_dict.npy
 #mv S3D_HowTo100M/s3dg.py ./
 pip install gymnax
 git clone https://github.com/carlosferrazza/humanoid-bench.git
+scp install/setup.py humanoid-bench/
 cd humanoid-bench/ 
 pip install -e .
 pip install "jax[cuda12]"
