@@ -16,6 +16,8 @@ echo 'export LD_LIBRARY_PATH=~/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH' >> ~/.bas
 echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia:/usr/lib/x86_64-linux-gnu:/usr/local/nvidia/lib64' >> ~/.bashrc
 source ~/.bashrc
 sudo apt-get install -y libglew-dev
+sudo apt-get update
+sudo apt-get install -y build-essential gcc
 conda env create -f environment_roboclip.yml
 conda activate roboclip
 pip install -e mjrl
@@ -40,6 +42,7 @@ conda install pytorch==2.3.1 torchvision==0.18.1 pytorch-cuda=12.1 -c pytorch -c
 #pip install "jax[cuda12]"
 # pip install --upgrade flax jax jaxlib
 pip install stable-baselines3 --upgrade
+export MUJOCO_GL=egl
 ```
 
 If you're running into download issues with the S3D weights (last 2 commands), the two files can also be obtained from our google drive:
