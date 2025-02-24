@@ -1,0 +1,58 @@
+defaults:
+ - task: default
+ - _self_
+
+seed: 0
+run_name: test
+wandb_project_name: "vlmrm"
+wandb_mode: "online"
+num_envs: 8
+device: "auto"
+image_width: 224
+eval_freq: 100_000
+rendering_backend: egl # osmesa #
+
+hydra:
+  run:
+    dir: outputs/${task.name}_${run_name}/${now:%Y-%m-%d_%H-%M-%S}
+    
+video_sampling_config:
+  video_length: 128
+  sep: 16
+  sampling_freq: 10e10
+  rendering_freq: 16
+  view_mode: "alternative"
+  
+env_config:
+  width: ${image_width}
+  height: ${image_width}
+  render_mode: rgb_array
+
+agent:
+  _target_: sbx_tqc.TQC
+  _partial_: True
+  policy: 'MlpPolicy'
+  batch_size: 256
+  device: ${device}
+  verbose: 1
+  learning_rate: ${linear_scheduling:lin_6e-4_5e-5}
+  info_keys_to_print: ${task.info_keys_to_print}
+  learning_starts: 10_000
+  train_freq: 8
+  gradient_steps: 16
+  tau: 0.01
+  gamma: 0.99
+  buffer_size: 1_000_000
+  use_sde: true
+  sde_sample_freq: 4
+  top_quantiles_to_drop_per_net: 5
+  policy_kwargs:
+    net_arch:
+      pi: [256, 256, 256]
+      qf: [256, 256, 256]
+    n_quantiles: 50
+
+
+learn:
+  total_timesteps: 10_000_000
+  log_interval: 10

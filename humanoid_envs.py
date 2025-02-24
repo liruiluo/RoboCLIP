@@ -43,6 +43,8 @@ from prompts import TASKS, TASKS_TARGET
 import henv
 import wandb
 from callbacks import ProgressBarCallback
+# tqc
+from sb3_contrib import TQC
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
@@ -53,7 +55,7 @@ def get_args():
     parser.add_argument('--env-type', type=str, default='h1hand-run-customized-v0')
     parser.add_argument('--total-time-steps', type=int, default=10000000)
     parser.add_argument('--n-envs', type=int, default=8)
-    parser.add_argument('--n-steps', type=int, default=128)
+    parser.add_argument('--n-steps', type=int, default=1000)
     parser.add_argument('--pretrained', type=str, default=None)
     parser.add_argument('--seed', type=int, default=0)
 
@@ -67,7 +69,7 @@ class MetaworldSparse(Env):
         # env = door_open_goal_hidden_cls(seed=rank)
         env= gym.make(env_id)
         env.action_space.seed(rank)
-        self.env = TimeLimit(env, max_episode_steps=128)
+        self.env = TimeLimit(env, max_episode_steps=1000)
         self.time = time
         if not self.time:
             self.observation_space = self.env.observation_space
@@ -150,7 +152,7 @@ class MetaworldSparse(Env):
         done = terminated or truncated
         self.past_observations.append(self.env.render())
         self.counter += 1
-        t = self.counter/128
+        t = self.counter/1000
         if self.time:
             obs = np.concatenate([obs, np.array([t])])
         if done:
@@ -183,7 +185,7 @@ class MetaworldDense(Env):
         # door_open_goal_hidden_cls = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[env_id]
         # env = door_open_goal_hidden_cls(seed=rank)
         env = gym.make(env_id)
-        self.env = TimeLimit(env, max_episode_steps=128)
+        self.env = TimeLimit(env, max_episode_steps=1000)
         self.time = time
         if not self.time:
             self.observation_space = self.env.observation_space
@@ -208,7 +210,7 @@ class MetaworldDense(Env):
         obs, reward, terminated, truncated, info = self.env.step(action)
         # self.past_observations.append(self.env.render())
         self.counter += 1
-        t = self.counter/128
+        t = self.counter/1000
         if self.time:
             obs = np.concatenate([obs, np.array([t])])
         return obs, reward, terminated, truncated, info
@@ -310,7 +312,30 @@ def main():
     envs = SubprocVecEnv([make_env(args.env_type, args.env_id, args.seed + i) for i in range(args.n_envs)])
 
     if not args.pretrained:
-        model = PPO("MlpPolicy", envs, verbose=1, tensorboard_log=log_dir, n_steps=args.n_steps, batch_size=args.n_steps*args.n_envs, n_epochs=1, ent_coef=0.5)
+        # model = PPO("MlpPolicy", envs, verbose=1, tensorboard_log=log_dir, n_steps=args.n_steps, batch_size=args.n_steps*args.n_envs, n_epochs=1, ent_coef=0.5)
+        model = TQC(
+            "MlpPolicy", 
+            envs, 
+            verbose=1, 
+            tensorboard_log=log_dir, 
+            # n_steps=args.n_steps, 
+            batch_size=256, 
+            train_freq=8, 
+            gradient_steps=16, 
+            tau=0.01, 
+            gamma=0.99, 
+            buffer_size=1_000_000, 
+            use_sde=True,
+            sde_sample_freq=4,
+            top_quantiles_to_drop_per_net=5,
+            policy_kwargs={  # 修正为字典格式
+                "net_arch": {
+                    "pi": [256, 256, 256],
+                    "qf": [256, 256, 256]
+                },
+                "n_quantiles": 50
+            }
+        )
     else:
         model = PPO.load(args.pretrained, env=envs, tensorboard_log=log_dir)
 
